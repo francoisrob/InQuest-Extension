@@ -1,12 +1,12 @@
 {
   "name": "ZinQuest",
   "version": "1.0",
+  "id": "zinquest-extension@francoisrob.me",
   "description": "Assist extension for ZinQuest faction family",
   "manifest_version": 3,
   "action": {
     "default_title": "ZinQuest"
   },
-  "permissions": ["activeTab"],
   "content_scripts": [
     {
       "matches": ["https://*.torn.com/loader.php?sid=attack&user2ID=*"],
