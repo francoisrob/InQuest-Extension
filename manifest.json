@@ -4,10 +4,11 @@
   "id": "zinquest-extension@francoisrob.me",
   "description": "Assist extension for ZinQuest faction family",
   "manifest_version": 3,
+  "update_url": "https://raw.githubusercontent.com/francoisrob/ZinQuest-Extension/main/updates.json",
   "action": {
     "default_title": "ZinQuest"
   },
-  "content_scripts": [
+  "content_scripts": [  
     {
       "matches": ["https://*.torn.com/loader.php?sid=attack&user2ID=*"],
       "js": ["content-script.js"]
