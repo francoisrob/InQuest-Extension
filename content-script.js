@@ -1,5 +1,10 @@
-const API_URL = "https://zinq.francoisrob.me/api/assist";
-// const API_URL = "http://localhost:3000/api/assist";
+const API_URL = "http://localhost:3000/api/assist";
+// const API_URL = "https://zinq.francoisrob.me/api/assist";
+let key;
+
+chrome.storage.sync.get(["key"], function (result) {
+  key = result.key;
+});
 
 function attachButton() {
   const section = document.getElementsByClassName("appHeaderWrapper___uyPti");
@@ -32,32 +37,35 @@ function attachButton() {
   select.add(tearOption);
 
   button.addEventListener("click", () => {
+    if (!key) {
+      const newKey = prompt("Please enter your TornStats API key");
+      if (newKey) {
+        chrome.storage.sync.set({ key: newKey }, function () {
+          console.log("Key saved");
+        });
+        key = newKey;
+      }
+    }
     clickButton();
   });
 
-  // section[0].insertBefore(button, section[0].childNodes[0]);
-  // section[0].insertBefore(select, section[0].childNodes[1]);
-  // append after all the children
   section[0].appendChild(button);
   section[0].appendChild(select);
 }
 
 async function clickButton() {
-  // works
-  // const labelsContainer = document.getElementsByClassName(
-  //   "labelsContainer___Oz6Su"
-  // );
-  // if (labelsContainer[0].childElementCount === 0) {
-  //   alert("You have to start a fight first.");
-  //   return;
-  // }
   const url = getUrl();
   const attackerId = url.split("ID=")[1];
-  const json = await getData(attackerId);
-  console.log(json);
+  const data = getData();
+  const stats = await getTornStatsData(attackerId);
+  if (!data) {
+    alert("Attack data not found. Please try again.");
+    return;
+  }
+  const json = JSON.parse(data);
 
-  if (!json) {
-    alert("Oops, something went wrong. Please try again.");
+  if (stats.status) {
+    alert(stats.message);
     return;
   }
 
@@ -70,8 +78,7 @@ async function clickButton() {
     alert("You have to start a fight first.");
     return;
   }
-
-  const tornID = json.DB?.attackerUser?.userID;
+  const tornID = json.DB?.attackerUser?.userID || url.split("user2ID=")[1];
   if (!tornID) {
     alert("You have to start a fight first.");
     return;
@@ -79,13 +86,14 @@ async function clickButton() {
 
   const select = document.getElementById("assist-select");
   const assistType = select.options[select.selectedIndex].value;
-  const data = {
+  const body = {
     tornID: tornID,
     url: url,
     assistType: assistType,
     json: json,
+    stats: stats
   };
-  sendPostRequest(API_URL, data);
+  sendPostRequest(API_URL, body);
 }
 
 function getTornID() {
@@ -111,15 +119,17 @@ function sendPostRequest(url, data) {
   }
 }
 
-async function getData(tornID) {
-  const url = `https://www.torn.com/loader.php?sid=attackData&mode=json&step=poll&user2ID=${tornID}`;
+function getData() {
+  const assistScriptDataContainer = document.querySelector('#assist-script-data-container');
+  return assistScriptDataContainer?.textContent
+}
+
+async function getTornStatsData(tornID) {
+  const url = `https://www.tornstats.com/api/v2/${key}/spy/user/${tornID}`
   const response = await fetch(url);
-  const string = await response.text();
-  const json = JSON.parse(
-    string.substring(string.indexOf("{"), string.lastIndexOf("}") + 1)
-  );
+  const json = await response.json();
   return json;
 }
 
-// Attach the button to the page.
 attachButton();
+
